@@ -1,4 +1,4 @@
-// import { generate } from 'astring'
+import { generate } from 'astring'
 import * as es from 'estree'
 import * as errors from './interpreter-errors'
 import { parse } from './parser'
@@ -14,11 +14,15 @@ const substituters = {
   Identifier(target: es.FunctionDeclaration | [es.Identifier, es.Literal], node: es.Identifier) {
     if (Array.isArray(target)) {
       const [id, lit] = target
+      console.log(`substituting ${id.name} with ${lit.value}`)
       // only accept string, boolean and numbers for arguments, throw error if doesn't conform
       if (!['string', 'boolean', 'number'].includes(typeof lit.value)) {
         throw new rttc.TypeError(lit, '', 'string, boolean or number', typeof lit.value)
       } else {
-        return node.name === id.name ? ast.primitive(lit.value) : substitute(target, node)
+        console.log(
+          `I got stuck here because my node name is ${node.name} and my id name is ${id.name}`
+        )
+        return node.name === id.name ? ast.primitive(lit.value) : node
       }
     } else {
       const fn = target
@@ -38,8 +42,10 @@ const substituters = {
     target: es.FunctionDeclaration | [es.Identifier, es.Literal],
     node: es.BinaryExpression
   ) {
+    console.log('binary')
     const { left, right } = node
     const [substedLeft, substedRight] = [left, right].map(exp => substitute(target, exp))
+    console.log([substedLeft, substedRight].map(generate))
     return ast.binaryExpression(
       node.operator,
       substedLeft as es.Expression,
@@ -107,11 +113,14 @@ const substituters = {
     target: es.FunctionDeclaration | [es.Identifier, es.Literal],
     node: es.ReturnStatement
   ) {
+    console.log('return statement')
     const arg = node.argument
     if (arg === undefined) {
+      console.log('sanity check')
       return node
     }
     const substedArgument = substitute(target, arg as es.Node)
+    console.log(generate(substedArgument))
     return ast.returnStatement(substedArgument as es.Expression, node.loc!)
   }
 }
@@ -275,8 +284,10 @@ const reducers = {
   ConditionalExpression(node: es.ConditionalExpression, context: Context): [es.Node, Context] {
     const { test, consequent, alternate } = node
     if (test.type === 'Literal') {
-      const error = rttc.checkIfStatement(node, test)
+      const error = rttc.checkIfStatement(node, test.value)
+      console.log(error)
       if (error === undefined) {
+        console.log(`test value is ${test.value}`)
         return [ast.expressionStatement(test.value ? consequent : alternate), context]
       } else {
         throw error
@@ -374,7 +385,7 @@ const reducers = {
    * but in future BlockStatement will need to handle return as well.
    * </BAD PRACTICE>
    */
-  BlockStatement(node: es.BlockStatement, context: Context) {
+  BlockStatement(node: es.BlockStatement, context: Context): [es.Node, Context] {
     const [firstStatement, ...otherStatements] = node.body
     if (firstStatement.type === 'ReturnStatement') {
       const arg = firstStatement.argument as es.Expression
@@ -385,7 +396,7 @@ const reducers = {
           reduce(arg, context)[0] as es.Expression,
           firstStatement.loc!
         )
-        return ast.blockStatement([reducedReturn, ...otherStatements], node.loc!)
+        return [ast.blockStatement([reducedReturn, ...otherStatements], node.loc!), context]
       }
     } else if (
       firstStatement.type === 'ExpressionStatement' &&

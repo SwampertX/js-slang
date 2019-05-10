@@ -1,0 +1,13 @@
+import { expectResult, stripIndent } from '../../utils/testing'
+
+test('memory intensive program runs fine', () => {
+  return expectResult(
+    stripIndent`
+        function f(x, xs){
+          return x>500 ? 0 : f(x+1, pair(xs,xs));
+        }
+        f(0,list(1));
+      `,
+    { chapter: 4, native: false }
+  ).toMatchInlineSnapshot('0')
+})

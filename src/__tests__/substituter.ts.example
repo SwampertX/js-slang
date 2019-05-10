@@ -108,6 +108,7 @@ true ? false ? garbage : Infinity : anotherGarbage;
 "
 `)
 })
+
 test('Test basic function', () => {
   const code = stripIndent`
   function f(n) {
@@ -182,6 +183,16 @@ f(5 + 1 * 6 - 40, 2 - 5);
 (function f(n, m) {
   return n * m;
 })(-29, -3);
+
+{
+  return -29 * -3;
+};
+
+{
+  return 87;
+};
+
+87;
 "
 `)
 })
@@ -206,6 +217,14 @@ factorial(5);
 (function factorial(n) {
   return n === 0 ? 1 : n * factorial(n - 1);
 })(5);
+
+{
+  return 5 === 0 ? 1 : 5 * factorial(5 - 1);
+};
+
+{
+  return false ? 1 : 5 * factorial(5 - 1);
+};
 "
 `)
 })

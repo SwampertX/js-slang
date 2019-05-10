@@ -1,0 +1,22 @@
+import { expectResult, stripIndent } from '../../utils/testing'
+jest.setTimeout(1000000)
+test('time intensive programs work okay', () => {
+  return expectResult(
+    stripIndent`
+      function findPrime(n){
+      // find the first n primes
+        let primes = list(2);
+        let curr = 3;
+        while(length(primes)<n){
+            // O(n^2)
+            let isPrime = accumulate((x,y) => x&&y , true, map((x)=>curr%x!==0, primes));
+            primes = isPrime? pair(curr, primes): primes;
+            curr=curr+1;
+        }
+        return head(primes);
+      }
+      findPrime(1000);
+  `,
+    { chapter: 4, native: false }
+  ).toMatchInlineSnapshot('7919') // 104729
+})

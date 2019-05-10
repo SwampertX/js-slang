@@ -1,3 +1,4 @@
+import { generate } from 'astring'
 import { Literal } from 'estree'
 import { RawSourceMap, SourceMapConsumer } from 'source-map'
 import { JSSLANG_PROPERTIES, UNKNOWN_LOCATION } from './constants'
@@ -179,7 +180,7 @@ export function runInContext(
         )
       }
     } else if (options.useSubst) {
-      const steps = getEvaluationSteps(code, context)
+      const steps = getEvaluationSteps(code, context).map(generate)
       return Promise.resolve({
         status: 'finished',
         value: steps
